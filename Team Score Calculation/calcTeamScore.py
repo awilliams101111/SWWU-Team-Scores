@@ -5,6 +5,18 @@ from itertools import combinations
 TEAM_SIZE = 3
 SHORT_TEAM_SIZE = 2  # used when a club has no eligible female archer
 
+# Ianseo club code -> club name for the SWWU clubs; archers from any other code or name are excluded.
+SWWU_CLUBS = {
+    "1077": "Plymouth",
+    "1342": "Bath",
+    "1373": "Swansea",
+    "1380": "Exeter",
+    "1759": "Aberystwyth",
+    "2373": "Bristol",
+    "2490": "Cardiff",
+    "2628": "UWE",
+}
+
 # name -> (eligibility predicate on an archer dict, max compound archers allowed)
 TEAM_DEFS = {
     "Sighted Team": (lambda a: a["division"] in ("R", "C") and a["experience"] in ("E", "N"), 1),
@@ -56,12 +68,14 @@ def calculate_teams(archers):
     """Compute ranked teams for each team type.
 
     Args:
-        archers (list[dict]): output of `parse_quali_export`.
+        archers (list[dict]): output of `parse_quali_export`; archers whose club code and name
+            do not match an entry in `SWWU_CLUBS` are excluded.
     Returns:
         dict[str, list[dict]]: team name -> ranked rows. Each row has: rank (int), club (str),
             members (tuple[dict]), score (int), tiebreaks (tuple[int, ...]). Equal scores and
             tie-breaks share a rank (competition ranking: 1, 1, 3).
     """
+    archers = [a for a in archers if SWWU_CLUBS.get(a["club_code"]) == a["club"]]
     clubs = sorted({a["club"] for a in archers})
     results = {}
     for team_name, (eligible, max_compound) in TEAM_DEFS.items():
