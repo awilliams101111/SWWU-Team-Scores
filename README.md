@@ -4,6 +4,7 @@ Calculates SWWU league team scores (Sighted, Unsighted, Novice; see `Team Score 
 
 ## Running
 
+0. Install [`uv` python package manager](https://docs.astral.sh/uv/getting-started/installation/)
 1. Install dependencies once from the repo root: `uv sync`
 2. Export the qualification results from Ianseo as a semicolon-delimited `.txt` and save it in `Data/ianseoExports/`.
 3. Run from the repo root:
