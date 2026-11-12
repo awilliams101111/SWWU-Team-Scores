@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "jupyter>=1.1.1",
-    "panadas>=0.2",
+    "pandas>=3.0.6",
+    "reportlab>=5.1.0",
 ]
