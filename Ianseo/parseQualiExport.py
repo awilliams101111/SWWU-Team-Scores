@@ -45,7 +45,7 @@ def parse_quali_export(source, tiebreak_columns=None):
             order. None uses every column from `Hits` to before `Category Rank`.
     Returns:
         tuple[list[dict], list[str]]: archers and the tie-break column names used. Each archer
-            dict has: name (str), club (str), division (str), experience (str), gender (str), class (str, e.g. "EO"),
+            dict has: name (str), club (str), club_code (str), division (str), experience (str), gender (str), class (str, e.g. "EO"),
             score (int), tiebreaks (tuple[int, ...]).
     """
     df = pd.read_csv(source, sep=";", dtype=str, encoding="utf-8-sig", keep_default_na=False)
@@ -64,12 +64,14 @@ def parse_quali_export(source, tiebreak_columns=None):
     for _, row in df.iterrows():
         experience, gender = parse_class(row["Class"])
         club = row["Country"].strip()
+        club_code = row["Noc"].strip()
         if not club or experience is None or gender is None:
             continue
         archers.append(
             {
                 "name": f"{row['GivenName'].strip()} {row['FamilyName'].strip()}",
                 "club": club,
+                "club_code": club_code,
                 "division": row["Division"].strip().upper(),
                 "experience": experience,
                 "class": f"{experience}{gender}",
