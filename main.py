@@ -29,7 +29,7 @@ def resolve_output(output, title, date_text):
     Returns:
         Path: a .pdf path. The default name is "<title> <date>.pdf" with illegal filename characters removed.
     """
-    name = re.sub(r'[<>:"/\\|?*]', "", f"{title} {date_text}").strip() + ".pdf"
+    name = re.sub(r'[<>:"/\\|?*]', "", f"{title} Team Results").strip() + ".pdf"
     if output is None:
         return ROOT / "Data" / "Team Score Reports" / name
     path = Path(output)
