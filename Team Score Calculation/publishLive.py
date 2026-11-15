@@ -16,21 +16,23 @@ LOGO_PATH = Path(__file__).resolve().parent.parent / "Data" / "SWWU Logo.png"
 PAGE_REFRESH_SECONDS = 30
 
 CSS = """
-:root { --bg:#fff; --fg:#111; --muted:#666; --head:#e4e4e4; --line:#bbb; --band:#f6f6f6; --err:#a00; }
-@media (prefers-color-scheme: dark) { :root { --bg:#16181b; --fg:#eee; --muted:#9aa; --head:#2a2d31; --line:#555; --band:#1d2024; --err:#f66; } }
-body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.4 system-ui, sans-serif; }
-main { max-width:960px; margin:0 auto; padding:0 16px 32px; }
-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:2px solid var(--fg); }
-header img { height:64px; width:64px; object-fit:contain; }
-header div { text-align:center; }
-h1 { font-size:1.4rem; margin:0; } h2 { margin:24px 0 6px; font-size:1.2rem; }
-.sub { margin:0; } .muted { color:var(--muted); font-size:.85rem; } .err { color:var(--err); font-weight:600; }
-.scroll { overflow-x:auto; }
-table { border-collapse:collapse; width:100%; border:1px solid var(--fg); }
-th { background:var(--head); text-align:left; padding:4px 6px; white-space:nowrap; }
-td { padding:3px 6px; border-bottom:1px solid var(--line); white-space:nowrap; }
-td.num, th.num { text-align:right; } td.mid { text-align:center; }
-tr.first td { border-top:2px solid var(--fg); } td.team { font-weight:600; background:var(--band); vertical-align:middle; }
+* { box-sizing:border-box; }
+body { margin:0; background:#fff; color:#333; font-family:Roboto, 'Segoe UI', Arial, sans-serif; font-weight:300; line-height:1.2; }
+main { max-width:1100px; margin:0 auto; padding:15px 10px 32px; }
+.banner { display:flex; align-items:center; justify-content:space-between; background:#007db3; border-radius:10px; }
+.banner img { height:100px; width:100px; object-fit:contain; background:#fff; border-radius:10px; margin:2px; }
+.banner div { flex:1 0 0; text-align:center; color:#fff; font-size:18px; padding:0 8px; }
+.note { margin:12px 2px 4px; font-size:13px; color:#777; } .err { margin:8px 2px; color:#c52d2f; font-weight:400; }
+.scroll { overflow-x:auto; margin-top:10px; }
+table { border-collapse:collapse; width:100%; background:#fff; border-radius:10px; overflow:hidden; }
+thead tr { background:#007db3; } thead th { color:#fff; font-size:18px; font-weight:300; padding:6px 8px 8px; text-align:left; white-space:nowrap; }
+thead tr.title th { text-align:center; padding:6px 8px 2px; }
+td { padding:4px 8px; font-size:15px; white-space:nowrap; }
+tbody tr:hover td { background:#b1d8f3; }
+tbody tr.alt td { background:#e1e0e1; } tbody tr.alt:hover td { background:#b1d8f3; }
+td.num, th.num { text-align:right; } td.mid, th.mid { text-align:center; }
+td.team { font-weight:400; vertical-align:middle; }
+@media (max-width:767px) { .banner img { height:50px; width:50px; } .banner div { font-size:15px; } }
 """
 
 
@@ -44,21 +46,23 @@ def lan_address():
             return "127.0.0.1"
 
 
-def _team_table(rows):
+def _team_table(rows, title):
     """HTML table for one team type.
 
     Args:
         rows (list[dict]): ranked rows from `calculate_teams(..., total_arrows=N)`.
+        title (str): team name shown in the table heading.
     Returns:
         str: HTML. Team cells (position, club, average, total, arrows) span the team's archer rows.
     """
     head = (
+        f"<tr class=title><th colspan=11>{html.escape(title)}</th></tr>"
         "<tr><th class=num>Pos.</th><th>Club</th><th>Athletes</th><th class=mid>Div.</th><th class=mid>Class</th>"
         "<th class=num>Arrows</th><th class=num>Score</th><th class=num>Avg</th>"
         "<th class=num>Projected</th><th class=num>Team avg</th><th class=num>Team score</th></tr>"
     )
     body = []
-    for row in rows:
+    for n, row in enumerate(rows):
         span = len(row["members"])
         for i, a in enumerate(row["members"]):
             cells = [
@@ -75,8 +79,8 @@ def _team_table(rows):
                 tail = "".join(
                     f"<td class='team num' rowspan={span}>{v}</td>" for v in (f"{row['projected']:.1f}", f"{row['average']:.3f}", row["score"])
                 )
-            body.append(f"<tr{' class=first' if i == 0 else ''}>{lead}{athlete}{''.join(cells)}{tail}</tr>")
-    return f"<div class=scroll><table>{head}{''.join(body)}</table></div>"
+            body.append(f"<tr{' class=alt' if n % 2 else ''}>{lead}{athlete}{''.join(cells)}{tail}</tr>")
+    return f"<div class=scroll><table><thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>"
 
 
 def render_page(results, title, subtitle, updated, error=None, interval=60, total_arrows=60):
@@ -95,19 +99,18 @@ def render_page(results, title, subtitle, updated, error=None, interval=60, tota
     """
     sections = []
     for team, rows in (results or {}).items():
-        content = _team_table(rows) if rows else "<p class=muted>No eligible teams yet.</p>"
-        sections.append(f"<h2>{html.escape(team)}</h2>{content}")
+        sections.append(_team_table(rows, team) if rows else f"<p class=note>{html.escape(team)}: No eligible teams.</p>")
     if results is None:
-        sections.append("<p class=muted>Waiting for the first results...</p>")
+        sections.append("<p class=note>Waiting for the first results...</p>")
     stamp = time.strftime("%H:%M:%S", time.localtime(updated)) if updated else "never"
     warning = f"<p class=err>Could not update from Ianseo ({html.escape(error)}). Showing the last good results.</p>" if error else ""
     logo = "<img src=/logo.png alt=''>" if LOGO_PATH.exists() else "<span></span>"
     return (
         f"<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
         f"<meta http-equiv=refresh content={PAGE_REFRESH_SECONDS}><title>{html.escape(title)} - live team scores</title><style>{CSS}</style></head>"
-        f"<body><main><header>{logo}<div><h1>{html.escape(title)}</h1><p class=sub>{html.escape(subtitle)}</p>"
-        f"<p class=sub>Live team scores</p></div>{logo}</header>"
-        f"<p class=muted>Ranked by projected score: the team's current average arrow value multiplied up to the {total_arrows} arrows each of its archers will shoot. Last updated from Ianseo at {stamp}; "
+        f"<body><main><div class=banner>{logo}<div><div>{html.escape(title)}</div><div>{html.escape(subtitle)}</div>"
+        f"<div>Live Team Scores</div></div>{logo}</div>"
+        f"<p class=note>Ranked by projected score: each archer's average arrow value multiplied up to the {total_arrows} arrows they will shoot, summed over the team. Last updated from Ianseo at {stamp}; "
         f"checked every {interval}s, and Ianseo itself publishes every few minutes.</p>{warning}{''.join(sections)}</main></body></html>"
     )
 

@@ -34,13 +34,14 @@ def team_key(members, total_arrows=None):
             (shot so far) per archer. None ranks by total score.
     Returns:
         tuple: (total score, summed tie-break 1, ...), or in live mode (projected score, total score,
-            summed tie-break 1, ...) where projected = current average arrow value * (team size * total_arrows).
+            summed tie-break 1, ...) where projected = sum over members of (own average arrow value * total_arrows). Each archer is projected
+            on their own average so an archer with few arrows shot cannot dilute the team.
     """
     n_tb = len(members[0]["tiebreaks"])
     total = sum(a["score"] for a in members)
     tiebreaks = tuple(sum(a["tiebreaks"][i] for a in members) for i in range(n_tb))
     if total_arrows:
-        return (total * len(members) * total_arrows / sum(a["arrows"] for a in members), total, *tiebreaks)
+        return (total_arrows * sum(a["score"] / a["arrows"] for a in members), total, *tiebreaks)
     return (total, *tiebreaks)
 
 
@@ -80,8 +81,8 @@ def calculate_teams(archers, total_arrows=None):
             name do not match an entry in `SWWU_CLUBS` are excluded.
         total_arrows (int | None): live mode: arrows each archer will shoot in total. Archers need an `arrows`
             count; those with no arrows shot or a zero score (not started / did not shoot) are ignored, and teams
-            are chosen and ranked by projected score (current average arrow value * the arrows the team's archers
-            will shoot in total), so smaller teams rank in the right place.
+            are chosen and ranked by projected score (each archer's own average arrow value * the arrows they will
+            shoot in total, summed over the team), so smaller teams rank in the right place.
     Returns:
         dict[str, list[dict]]: team name -> ranked rows. Each row has: rank (int), club (str),
             members (tuple[dict]), score (int), tiebreaks (tuple[int, ...]). Equal scores and
@@ -97,14 +98,14 @@ def calculate_teams(archers, total_arrows=None):
         rows = []
         for club in clubs:
             pool = [a for a in archers if a["club"] == club and eligible(a)]
-            members = best_team(pool, max_compound) if pool else None
+            members = best_team(pool, max_compound, total_arrows) if pool else None
             if members:
                 key = team_key(members, total_arrows)
                 row = {"club": club, "members": members, "key": key, "score": sum(a["score"] for a in members)}
                 row["tiebreaks"] = key[len(key) - len(members[0]["tiebreaks"]) :]
                 if total_arrows:
                     row["arrows"] = sum(a["arrows"] for a in members)
-                    row["average"] = row["score"] / row["arrows"]
+                    row["average"] = key[0] / (total_arrows * len(members))
                     row["projected"] = key[0]
                 rows.append(row)
         rows.sort(key=lambda r: r["key"], reverse=True)
