@@ -13,7 +13,7 @@ Calculates SWWU league team scores (Sighted, Unsighted, Novice; see `Team Score 
 uv run main.py Data/ianseoExports/SWWU26L1.txt --title "SWWU 2026 Indoor Championship" --subtitle "Leg 6, University of Exeter"
 ```
 
-The PDF is saved to `Data/Team Score Reports/<title> <date>.pdf`.
+The PDF is saved to `Data/Team Score Reports/<title>.pdf`.
 
 | Argument | Required | Description |
 |---|---|---|
