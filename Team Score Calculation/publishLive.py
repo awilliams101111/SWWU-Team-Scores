@@ -77,7 +77,7 @@ def _team_table(rows, title):
             tail = ""
             if i == 0:
                 tail = "".join(
-                    f"<td class='team num' rowspan={span}>{v}</td>" for v in (f"{row['projected']:.1f}", f"{row['average']:.3f}", row["score"])
+                    f"<td class='team num' rowspan={span}>{v}</td>" for v in (f"{row['projected']:.0f}", f"{row['average']:.3f}", row["score"])
                 )
             body.append(f"<tr{' class=alt' if n % 2 else ''}>{lead}{athlete}{''.join(cells)}{tail}</tr>")
     return f"<div class=scroll><table><thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>"

@@ -78,9 +78,9 @@ def calculate_teams(archers, total_arrows=None):
 
     Args:
         archers (list[dict]): output of `parse_quali_export` or the live parser; archers whose club code and
-            name do not match an entry in `SWWU_CLUBS` are excluded.
+            name do not match an entry in `SWWU_CLUBS`, or whose score is 0 (did not start), are excluded.
         total_arrows (int | None): live mode: arrows each archer will shoot in total. Archers need an `arrows`
-            count; those with no arrows shot or a zero score (not started / did not shoot) are ignored, and teams
+            count; those with no arrows shot are ignored, and teams
             are chosen and ranked by projected score (each archer's own average arrow value * the arrows they will
             shoot in total, summed over the team), so smaller teams rank in the right place.
     Returns:
@@ -90,8 +90,9 @@ def calculate_teams(archers, total_arrows=None):
             arrows (int, shot so far), average (float) and projected (float).
     """
     archers = [a for a in archers if SWWU_CLUBS.get(a["club_code"], "").lower() == a["club"].lower()]
+    archers = [a for a in archers if a["score"] > 0]  # a zero score means the archer did not start
     if total_arrows:
-        archers = [a for a in archers if a["arrows"] > 0 and a["score"] > 0]
+        archers = [a for a in archers if a["arrows"] > 0]
     clubs = sorted({a["club"] for a in archers})
     results = {}
     for team_name, (eligible, max_compound) in TEAM_DEFS.items():
